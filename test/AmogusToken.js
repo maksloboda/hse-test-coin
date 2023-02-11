@@ -14,7 +14,7 @@ describe("AmogusToken contract", function () {
     return { amogusToken, owner, addr1, addr2 };
   }
   
-  var ownerBalance
+  var defaultSupply = 1000
 
   it("Correct default values", async function () {
     const { amogusToken, owner, addr1, addr2 } = await loadFixture(
@@ -25,6 +25,7 @@ describe("AmogusToken contract", function () {
     // Owner should have all the tokens
     ownerBalance = await amogusToken.balanceOf(owner.address);
     expect(await amogusToken.totalSupply()).to.equal(ownerBalance);
+    expect(await amogusToken.totalSupply()).to.equal(defaultSupply);
     const addr1Balance = await amogusToken.balanceOf(addr1.address);
     expect(0).to.equal(addr1Balance);
     const addr2Balance = await amogusToken.balanceOf(addr2.address);
@@ -63,6 +64,25 @@ describe("AmogusToken contract", function () {
 
     await expect(amogusToken.connect(addr2).transferFrom(addr1.address, owner.address, 1)).to
     .be.revertedWith("Not enough allowance");
+
+  })
+
+  it("Creating tokens", async function () {
+    const { amogusToken, owner, addr1, addr2 } = await loadFixture(
+      deployTokenFixture
+    );
+
+    await expect(amogusToken.connect(addr2).mint(1)).to
+    .be.revertedWith("Only owner can create");
+
+    await expect(amogusToken.connect(owner).mint(1)).to
+    .changeTokenBalance(amogusToken, owner, 1);
+
+    expect(await amogusToken.totalSupply()).to
+    .equal(defaultSupply + 1);
+
+    await expect(amogusToken.connect(owner).mint(1)).to
+    .emit(amogusToken, "Transfer").withArgs('0x0000000000000000000000000000000000000000', owner.address, 1);
 
   })
 

@@ -31,6 +31,13 @@ contract AmogusToken {
         return balances[_owner].balance;
     }
 
+    function mint(uint256 _value) public {
+        require(msg.sender == owner, "Only owner can create");
+        totalSupply += _value;
+        balances[owner].balance += _value;
+        emit Transfer(address(0x0), owner, _value);
+    }
+
     function rawTransfer(address _from, address _to, uint256 _value) internal returns (bool success) {
         require(balances[_from].balance >= _value, "Not enough tokens");
         balances[_from].balance -= _value;
