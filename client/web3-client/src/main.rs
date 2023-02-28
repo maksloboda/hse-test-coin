@@ -1,6 +1,7 @@
 use std::env;
-use ethers::providers::{Provider, Http};
-use ethers::prelude::SignerMiddleware;
+use ethers::providers::{Middleware, Provider, Http};
+use ethers::types::TransactionRequest;
+use ethers::middleware::SignerMiddleware;
 use std::convert::TryFrom;
 use serde_json;
 use serde::{Serialize, Deserialize};
@@ -50,8 +51,8 @@ async fn main() -> Result<(), ()> {
     let contract_info = serde_json::from_str::<ContractInfo>(&fs::read_to_string("../../artifacts/contracts/AmogusToken.sol/AmogusToken.json").unwrap()).unwrap();
     let abi: Abi = contract_info.abi;
     let wallet: LocalWallet = env::var("GOERLI_PRIVATE_KEY").unwrap().parse().unwrap();
-    let client = SignerMiddleware::new(provider, wallet);
-    let contract = Contract::new(address, abi, client);
+    let client = SignerMiddleware::new(provider, wallet.with_chain_id(5u64));
+    let contract = Contract::new(address, abi, &client);
 
     // Call read only method
     let init_value: U256 = contract
@@ -80,7 +81,7 @@ async fn main() -> Result<(), ()> {
     println!("{:?}", logs);
 
     // Check approvals before call    
-    let logs: Vec<Transfer> = contract
+    let logs: Vec<Approval> = contract
         .event_for_name("Approval").unwrap()
         .from_block(0u64)
         .query()
@@ -94,7 +95,7 @@ async fn main() -> Result<(), ()> {
     println!("{:?}", receipt);
 
     // Check aprovals after call
-    let logs: Vec<Transfer> = contract
+    let logs: Vec<Approval> = contract
         .event_for_name("Approval").unwrap()
         .from_block(0u64)
         .query()
